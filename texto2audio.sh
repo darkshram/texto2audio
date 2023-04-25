@@ -21,7 +21,7 @@
 # Instalar festival, hispavoces-pal-diphone e hispavoces-sfl-diphone.
 
 ARCHIVO=$1
-AUDIO=`echo $ARCHIVO |sed -e 's,.txt,,'`
+AUDIO=$(echo ${ARCHIVO} |sed -e 's,.txt,,')
 
 # Validamos que se proporcione un argumento.
 if [ $# -eq 0 ]; then
@@ -31,8 +31,8 @@ if [ $# -eq 0 ]; then
 fi
 
 # Validamos que sea un archivo de texto simple.
-TIPO=`file --brief --mime-type $ARCHIVO`
-if [ $TIPO != 'text/plain' ] ; then
+TIPO=$(file --brief --mime-type ${ARCHIVO})
+if [ ${TIPO} != 'text/plain' ] ; then
     echo "* No es un archivo de texto simple. *"
     exit 1
 fi
@@ -45,7 +45,7 @@ function reproducir {
         echo "Reproducción cancelada."
         exit ;
     else
-        ogg123 -q $AUDIO.ogg
+        ogg123 -q ${AUDIO}.ogg
     fi
 }
 
@@ -55,15 +55,18 @@ function reproducir {
 #  Masculina:
 #    voice_JuntaDeAndalucia_es_pa_diphone
 
-cat $ARCHIVO | \
-    iconv -f utf-8 -t iso-8859-1 | \
+#     echo $1 | iconv -f utf-8 -t iso-8859-1 | text2wave > $2
+
+cat ${ARCHIVO} | \
+    iconv -f utf-8 -t iso-8859-1 |
     text2wave \
     -eval '(voice_JuntaDeAndalucia_es_pa_diphone)' \
-    -o $AUDIO.wav && \
-lame --quiet -b 256 -h $AUDIO.wav $AUDIO.mp3 && \
-oggenc -Q -q 8 -o $AUDIO.ogg $AUDIO.wav && \
+    > ${AUDIO}-tmp.wav && \
+sox ${AUDIO}-tmp.wav ${AUDIO}.wav sinc 0k-5k && \
+rm -f ${AUDIO}-tmp.wav && \
+lame --quiet -b 320 -h ${AUDIO}.wav ${AUDIO}.mp3 && \
+oggenc -Q -q 8 -o ${AUDIO}.ogg ${AUDIO}.wav && \
 echo -e "\nSe produjeron dos archivos de audio:" && \
-du -sh $AUDIO.mp3 $AUDIO.ogg && \
+du -sh ${AUDIO}.mp3 ${AUDIO}.ogg && \
 echo -e "\n" && \
 reproducir
-
